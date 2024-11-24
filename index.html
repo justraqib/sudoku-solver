@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sudoku Grid</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                margin-top: 30px;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(9, 40px);
+                grid-gap: 0;
+                justify-content: center;
+                margin: 20px auto;
+                border: 3px solid #000;
+            }
+
+            .cell {
+                width: 40px;
+                height: 40px;
+                text-align: center;
+                font-size: 24px;
+                border: 1px solid #000;
+                box-sizing: border-box;
+                text-transform: uppercase;
+            }
+            .cell:focus {
+                outline: none;
+            }
+
+            .cell:nth-child(3n + 3):not(:nth-child(9n)) {
+                border-right: 3px solid black;
+            }
+
+            /* 3rd and 6th rows */
+            .cell:nth-child(n + 19):nth-child(-n + 27),
+            .cell:nth-child(n + 46):nth-child(-n + 54) {
+                border-bottom: 3px solid black;
+            }
+
+            .cell::-webkit-inner-spin-button,
+            .cell::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+                background-color: #28a745;
+                color: white;
+                border: none;
+                border-radius: 5px;
+            }
+
+            .btn:hover {
+                background-color: #218838;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Sudoku Solver</h1>
+        <div style="display: flex">
+            <div class="grid" id="sudoku-grid"></div>
+        </div>
+        <button class="btn" id="solve-button">Solve</button>
+
+        <script>
+            // Initialize grid
+            const grid = document.getElementById("sudoku-grid");
+
+            // Create 9x9 grid
+            for (let i = 0; i < 81; i++) {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.classList.add("cell");
+                input.maxLength = 1;
+                input.value = 0; // Initially empty
+
+                // Handle input validation
+                input.addEventListener("input", (e) => {
+                    const value = e.target.value;
+
+                    // Check if input is valid (1-9)
+                    if (/^[0-9]$/.test(value)) {
+                        e.target.value = value; // Allow valid number
+                    } else {
+                        e.target.value = ""; // Reset invalid input
+                    }
+                });
+
+                // Handle keydown for movement and replacing values
+                input.addEventListener("keydown", (e) => {
+                    if (/^[0-9]$/.test(e.key)) {
+                        // Replace value with the pressed key
+                        e.target.value = e.key;
+
+                        // Move to the next cell
+                        const nextInput = grid.querySelectorAll(".cell")[i + 1];
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+
+                        // Prevent further propagation of the key event
+                        e.preventDefault();
+                    } else if (e.key === "Backspace" || e.key === "Delete") {
+                        // Clear current value
+                        e.target.value = "";
+
+                        // Move to the previous cell on Backspace/Delete
+                        const prevInput = grid.querySelectorAll(".cell")[i - 1];
+                        if (prevInput) {
+                            prevInput.focus();
+                        }
+
+                        // Prevent default browser action
+                        e.preventDefault();
+                    }
+                });
+
+                grid.appendChild(input);
+            }
+
+            document
+                .getElementById("solve-button")
+                .addEventListener("click", async () => {
+                    const cells = document.querySelectorAll(".cell");
+                    const board = [];
+
+                    // Convert grid values to 2D array
+                    for (let i = 0; i < 9; i++) {
+                        const row = [];
+                        for (let j = 0; j < 9; j++) {
+                            row.push(Number(cells[i * 9 + j].value) || 0);
+                        }
+                        board.push(row);
+                    }
+                    console.log(board);
+
+                    // Send board to backend
+                    const response = await fetch(
+                        "http://localhost:3000/solve",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ board }),
+                        }
+                    );
+
+                    const data = await response.json();
+                    if (data.success) {
+                        // Update grid with solved board
+                        const solvedBoard = data.board;
+                        for (let i = 0; i < 9; i++) {
+                            for (let j = 0; j < 9; j++) {
+                                cells[i * 9 + j].value = solvedBoard[i][j];
+                            }
+                        }
+                    } else {
+                        alert("Sudoku cannot be solved!");
+                    }
+                });
+        </script>
+    </body>
+</html>
