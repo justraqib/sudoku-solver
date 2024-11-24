@@ -31,5 +31,5 @@ A web-based Sudoku Solver that allows users to input a Sudoku puzzle, solve it u
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/sudoku-solver.git
+git clone https://github.com/justraqib/sudoku-solver.git
 cd sudoku-solver
